@@ -1,0 +1,165 @@
+openapi: 3.0.3
+info:
+  title: Marketplace Cloud — Componentes Compartidos
+  version: 1.0.0
+  description: |
+    Esquemas reutilizables que TODOS los contratos del proyecto deben
+    referenciar vía `$ref` en vez de redefinir su propia versión de
+    `Error`, `Pagination` o `Money`.
+
+    Cómo referenciarlos desde el contrato de un grupo (OpenAPI 3.0
+    soporta referencias externas a otro archivo):
+
+    ```yaml
+    schema:
+      $ref: '../../shared/components.yaml#/components/schemas/Error'
+    ```
+
+    Ver las reglas obligatorias en `data-dictionary/conventions.md` y las
+    entidades de negocio compartidas en
+    `data-dictionary/canonical-models.md`.
+
+paths: {}
+
+components:
+  schemas:
+
+    Error:
+      type: object
+      required: [code, message]
+      description: >
+        Forma estándar de error para todo el ecosistema. El campo se
+        llama `code`, nunca `error`. El frontend/BFF debe hacer lógica
+        sobre `code`, nunca sobre `message` (que es solo para humanos).
+      properties:
+        code:
+          type: string
+          description: Código de error legible por máquina, UPPER_SNAKE_CASE.
+          example: RESOURCE_NOT_FOUND
+        message:
+          type: string
+          description: Descripción legible para el desarrollador.
+          example: El recurso solicitado no fue encontrado.
+        details:
+          type: array
+          nullable: true
+          description: Errores de validación por campo (uso típico en 400).
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+        correlationId:
+          type: string
+          nullable: true
+          description: Para trazabilidad distribuida entre servicios.
+
+    Pagination:
+      type: object
+      required: [page, pageSize, total, totalPages, hasNext, hasPrev]
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          example: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          example: 20
+        total:
+          type: integer
+          example: 158
+        totalPages:
+          type: integer
+          example: 8
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+
+    Money:
+      type: object
+      required: [amount, currency]
+      description: >
+        El dinero SIEMPRE es entero (CLP no tiene decimales). Nunca usar
+        `number`/`float`/`double` para montos.
+      properties:
+        amount:
+          type: integer
+          description: Monto en la unidad mínima de la moneda (sin decimales).
+          example: 49990
+        currency:
+          type: string
+          enum: [CLP]
+          default: CLP
+
+    EventEnvelope:
+      type: object
+      required: [eventId, eventType, version, occurredAt, producer, payload]
+      description: >
+        Sobre estándar para todos los eventos publicados vía Pub/Sub
+        (convención de tecnologías del curso: "Contratos JSON Pub/Sub").
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        eventType:
+          type: string
+          example: ORDER_CREATED
+        version:
+          type: string
+          example: "1.0"
+        occurredAt:
+          type: string
+          format: date-time
+        producer:
+          type: string
+          description: Identificador del servicio que generó el evento.
+          example: group-5-pedidos
+        correlationId:
+          type: string
+          nullable: true
+        payload:
+          type: object
+          description: Contenido específico del evento, en camelCase.
+
+  parameters:
+    CorrelationIdHeader:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Identificador para trazabilidad distribuida entre servicios.
+
+  responses:
+    BadRequest:
+      description: Solicitud mal formada o datos inválidos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Token ausente, inválido o expirado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: El usuario no tiene permisos para este recurso.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Recurso no encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

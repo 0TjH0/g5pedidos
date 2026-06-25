@@ -1,0 +1,279 @@
+{
+	"info": {
+		"_postman_id": "b5a54321-0987-4321-b6a5-fedcba098765",
+		"name": "Grupo 5 — Pedidos (Order Management) - E2 Mock",
+		"description": "Colección oficial del Grupo 5 para la validación de contratos REST v1.1.0. Incluye 4 flujos felices y 2 flujos de excepción automatizados con variables de entorno.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Happy Paths (Flujos Exitosos)",
+			"item": [
+				{
+					"name": "HP1 - Crear Pedido Exitoso",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "{{idempotencyKey}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Correlation-Id",
+								"value": "{{correlationId}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{userId}}\",\n  \"items\": [\n    {\n      \"productId\": \"f0e9d8c7-b6a5-4321-0987-fedcba098765\",\n      \"name\": \"Notebook Lenovo IdeaPad\",\n      \"quantity\": 2,\n      \"unitPrice\": 799990,\n      \"subtotal\": 1599980\n    }\n  ],\n  \"shippingAddress\": null,\n  \"notes\": \"Mitigación temporal de datos de despacho del Grupo 4\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						},
+						"description": "Simula la creación de una orden gatillada por el proceso de checkout del Grupo 4. Responde 201 Created."
+					},
+					"response": []
+				},
+				{
+					"name": "HP2 - Obtener Detalle de un Pedido",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Correlation-Id",
+								"value": "{{correlationId}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{orderId}}"
+							]
+						},
+						"description": "Llamada del BFF (Grupo 1) para pintar el desglose completo del pedido de un cliente en la pantalla del frontend. Responde 200 OK."
+					},
+					"response": []
+				},
+				{
+					"name": "HP3 - Transicionar Estado del Pedido",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Correlation-Id",
+								"value": "{{correlationId}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"PAID\",\n  \"reason\": null\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{orderId}}",
+								"status"
+							]
+						},
+						"description": "Invocación interna/asíncrona tras recibir la aprobación de pago del Grupo 8. Cambia el estado a PAID. Responde 200 OK."
+					},
+					"response": []
+				},
+				{
+					"name": "HP4 - Listar Historial de Pedidos de Usuario",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Correlation-Id",
+								"value": "{{correlationId}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}/orders?page=1&pageSize=10",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}",
+								"orders"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Consulta paginada que consume el Frontend (Grupo 1) para renderizar el historial dentro del perfil del usuario. Responde 200 OK."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Error Paths (Casos de Excepción)",
+			"item": [
+				{
+					"name": "ERR1 - Fallo de Sincronización Moneda (G4 Protection)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							},
+							{
+								"key": "Idempotency-Key",
+								"value": "{{idempotencyKey}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{userId}}\",\n  \"items\": [\n    {\n      \"productId\": \"f0e9d8c7-b6a5-4321-0987-fedcba098765\",\n      \"name\": \"Producto en Dólares de Prueba\",\n      \"quantity\": 1,\n      \"unitPrice\": 19.99,\n      \"subtotal\": 19.99\n    }\n  ],\n  \"currency\": \"USD\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders"
+							]
+						},
+						"description": "Caso de error provocado si el Grupo 4 envía la orden con divisa USD o precios decimales. El validador del G5 frena la transacción. Responde 400 Bad Request."
+					},
+					"response": []
+				},
+				{
+					"name": "ERR2 - Transición de Estado Prohibida",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"CREATED\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"orders",
+								"{{orderId}}",
+								"status"
+							]
+						},
+						"description": "Intento ilegal de retroceder un pedido procesado al estado inicial 'CREATED'. Responde 409 Conflict."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://grupo5-pedidos-mock.onrender.com",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+			"type": "string"
+		},
+		{
+			"key": "idempotencyKey",
+			"value": "d3b07384-d113-49cd-a5d6-8cf61b63da15",
+			"type": "string"
+		},
+		{
+			"key": "correlationId",
+			"value": "99999999-8888-4777-9666-555555555555",
+			"type": "string"
+		},
+		{
+			"key": "orderId",
+			"value": "ORD-20260622-001",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "e9d8c7b6-a543-2109-8765-fedcba098765",
+			"type": "string"
+		}
+	]
+}
